@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VidyaVantage — Educational Consulting · Tallinn, Estonia</title>
+  <meta name="description" content="VidyaVantage guides students from India and beyond into Europe's finest universities, and helps European institutions build bridges to new talent. Based in Tallinn, Estonia.">
+  <link rel="preload" href="fonts/PlayfairDisplay-var.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/Inter-var.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230F172A'/%3E%3Cpath d='M8 9l8 14 8-14' fill='none' stroke='%23D9A62E' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <!-- ======= NAVIGATION ======= -->
+  <header class="nav" id="nav">
+    <div class="nav__inner">
+      <a href="#top" class="nav__brand" aria-label="VidyaVantage home">
+        <svg class="nav__mark" width="34" height="34" viewBox="0 0 32 32" aria-hidden="true">
+          <rect width="32" height="32" rx="8" fill="currentColor" opacity="0.12"/>
+          <path d="M8 9l8 14 8-14" fill="none" stroke="var(--gold-bright)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="nav__word">Vidya<em>Vantage</em></span>
+      </a>
+      <nav class="nav__links" aria-label="Primary">
+        <a href="#services">Services</a>
+        <a href="#destinations">Destinations</a>
+        <a href="#process">How it works</a>
+        <a href="#universities">For universities</a>
+        <a href="#contact" class="nav__cta">Free consultation</a>
+      </nav>
+      <button class="nav__toggle" id="navToggle" aria-expanded="false" aria-controls="mobileMenu" aria-label="Open menu">
+        <span></span><span></span>
+      </button>
+    </div>
+    <nav class="nav__mobile" id="mobileMenu" aria-label="Mobile">
+      <a href="#services">Services</a>
+      <a href="#destinations">Destinations</a>
+      <a href="#process">How it works</a>
+      <a href="#universities">For universities</a>
+      <a href="#contact" class="nav__cta">Free consultation</a>
+    </nav>
+  </header>
+
+  <main id="main">
+    <!-- ======= HERO ======= -->
+    <section class="hero" id="top">
+      <div class="hero__aurora" aria-hidden="true">
+        <div class="aurora aurora--gold"></div>
+        <div class="aurora aurora--blue"></div>
+        <div class="aurora aurora--teal"></div>
+      </div>
+      <div class="hero__grid" aria-hidden="true"></div>
+
+      <div class="hero__inner">
+        <div class="hero__copy">
+          <p class="eyebrow reveal">Educational consulting · Tallinn, Estonia</p>
+          <h1 class="hero__title">
+            <span class="hero__line"><span>From ambition</span></span>
+            <span class="hero__line"><span>to <em>admission,</em></span></span>
+            <span class="hero__line"><span>across Europe.</span></span>
+          </h1>
+          <p class="hero__sub reveal" data-delay="3">
+            We guide students from India and beyond into Europe's finest universities —
+            and help institutions on both continents find each other. Independent advice,
+            honest timelines, no shortcuts.
+          </p>
+          <div class="hero__actions reveal" data-delay="4">
+            <a class="btn btn--gold" href="#contact">
+              Book a free consultation
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+            <a class="btn btn--ghost" href="#universities">For universities</a>
+          </div>
+        </div>
+
+        <aside class="hero__card glass reveal" data-delay="5" aria-label="At a glance">
+          <p class="hero__card-label">At a glance</p>
+          <ul class="hero__stats">
+            <li>
+              <span class="hero__stat-num" data-count="1200" data-suffix="+">0</span>
+              <span class="hero__stat-cap">students placed since 2019</span>
+            </li>
+            <li>
+              <span class="hero__stat-num" data-count="85" data-suffix="+">0</span>
+              <span class="hero__stat-cap">partner universities in 11 countries</span>
+            </li>
+            <li>
+              <span class="hero__stat-num" data-count="97" data-suffix="%">0</span>
+              <span class="hero__stat-cap">visa approval rate, 2025 intake</span>
+            </li>
+          </ul>
+          <div class="hero__card-foot">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="var(--gold-bright)" stroke-width="1.8"/><path d="M12 7v5l3 3" stroke="var(--gold-bright)" stroke-width="1.8" stroke-linecap="round"/></svg>
+            <span>Autumn 2026 intake — applications open now</span>
+          </div>
+        </aside>
+      </div>
+
+      <div class="hero__scrollhint" aria-hidden="true">
+        <span>Scroll</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 5v14m-6-6 6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+    </section>
+
+    <!-- ======= TRUST BAR ======= -->
+    <section class="trust" aria-label="Universities our students study at">
+      <p class="trust__label">Our students study at</p>
+      <div class="trust__viewport">
+        <div class="trust__track" id="trustTrack">
+          <span>University of Tartu</span><i></i>
+          <span>TalTech</span><i></i>
+          <span>TU Munich</span><i></i>
+          <span>TU Delft</span><i></i>
+          <span>Trinity College Dublin</span><i></i>
+          <span>Sciences Po</span><i></i>
+          <span>Aalto University</span><i></i>
+          <span>KU Leuven</span><i></i>
+          <span>University of Amsterdam</span><i></i>
+          <span>RWTH Aachen</span><i></i>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======= SERVICES ======= -->
+    <section class="section" id="services">
+      <div class="section__head reveal">
+        <p class="eyebrow">For students &amp; families</p>
+        <h2>Every step, handled with care</h2>
+        <p class="section__lede">One counsellor owns your journey end-to-end — from the first shortlist to your first week on campus.</p>
+      </div>
+
+      <div class="cards">
+        <article class="card reveal">
+          <div class="card__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M3 9.5 12 5l9 4.5-9 4.5-9-4.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M6.5 11.5v4.2c0 1.3 2.5 2.8 5.5 2.8s5.5-1.5 5.5-2.8v-4.2M21 9.5V15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </div>
+          <h3>University shortlisting</h3>
+          <p>A data-backed shortlist matched to your grades, budget and career goals — never a copy-paste list of "top 10s".</p>
+        </article>
+        <article class="card reveal" data-delay="1">
+          <div class="card__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M7 3h7l4 4v14H7V3Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 3v4h4M10 12h5m-5 3.5h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </div>
+          <h3>Applications &amp; essays</h3>
+          <p>Statement-of-purpose coaching and application management, with real editors — your voice, sharpened.</p>
+        </article>
+        <article class="card reveal" data-delay="2">
+          <div class="card__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="m8.5 12.5 2.4 2.4 4.6-5.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h3>Visa &amp; residence permits</h3>
+          <p>Country-specific document checklists, mock interviews and follow-through until the permit is in your hand.</p>
+        </article>
+        <article class="card reveal">
+          <div class="card__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.8"/><path d="M12 7.5v9m2.6-7.2c-.5-.8-1.5-1.3-2.6-1.3-1.5 0-2.7.9-2.7 2.1 0 2.8 5.4 1.4 5.4 4.2 0 1.2-1.2 2.1-2.7 2.1-1.1 0-2.1-.5-2.6-1.3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </div>
+          <h3>Scholarships &amp; funding</h3>
+          <p>We surface tuition waivers, DAAD, Erasmus+ and country grants early — €2.4M won by our students to date.</p>
+        </article>
+        <article class="card reveal" data-delay="1">
+          <div class="card__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M12 21s-6.5-4.6-6.5-10a6.5 6.5 0 0 1 13 0c0 5.4-6.5 10-6.5 10Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="10.5" r="2.3" stroke="currentColor" stroke-width="1.8"/></svg>
+          </div>
+          <h3>Pre-departure &amp; settling in</h3>
+          <p>Housing, banking, SIM cards, winter coats — a practical checklist and a person to call in your first month.</p>
+        </article>
+        <article class="card reveal" data-delay="2">
+          <div class="card__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M4 19V5.5A1.5 1.5 0 0 1 5.5 4H19" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="m7 15 3.2-3.8 2.8 2.4L17.5 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M14.5 8h3v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h3>Test &amp; interview prep</h3>
+          <p>IELTS, TOEFL and admissions-interview coaching with clear score targets tied to your shortlist.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- ======= DESTINATIONS ======= -->
+    <section class="section section--tinted" id="destinations">
+      <div class="section__head reveal">
+        <p class="eyebrow">Where you could be next year</p>
+        <h2>Destinations we know street-by-street</h2>
+        <p class="section__lede">We only advise on countries where we have placed students and visited campuses ourselves.</p>
+      </div>
+
+      <div class="dest">
+        <article class="dest__card dest__card--featured reveal">
+          <div class="dest__flag" aria-hidden="true"><span style="background:#4891D9"></span><span style="background:#000"></span><span style="background:#fff"></span></div>
+          <h3>Estonia</h3>
+          <p class="dest__tag">Our home turf</p>
+          <p>Europe's digital pioneer. English-taught degrees from €3,000/yr, thriving startup scene, and we'll meet you at the airport.</p>
+          <dl class="dest__facts">
+            <div><dt>Partner universities</dt><dd>6</dd></div>
+            <div><dt>Typical tuition</dt><dd>€3–6k/yr</dd></div>
+          </dl>
+        </article>
+        <article class="dest__card reveal" data-delay="1">
+          <div class="dest__flag" aria-hidden="true"><span style="background:#000"></span><span style="background:#DD0000"></span><span style="background:#FFCE00"></span></div>
+          <h3>Germany</h3>
+          <p>World-class engineering with little or no tuition at public universities. Strong post-study work options.</p>
+          <dl class="dest__facts">
+            <div><dt>Partner universities</dt><dd>19</dd></div>
+            <div><dt>Typical tuition</dt><dd>€0–3k/yr</dd></div>
+          </dl>
+        </article>
+        <article class="dest__card reveal" data-delay="2">
+          <div class="dest__flag" aria-hidden="true"><span style="background:#AE1C28"></span><span style="background:#fff"></span><span style="background:#21468B"></span></div>
+          <h3>Netherlands</h3>
+          <p>2,000+ English-taught programmes and a famously international classroom culture.</p>
+          <dl class="dest__facts">
+            <div><dt>Partner universities</dt><dd>12</dd></div>
+            <div><dt>Typical tuition</dt><dd>€9–15k/yr</dd></div>
+          </dl>
+        </article>
+        <article class="dest__card reveal">
+          <div class="dest__flag" aria-hidden="true"><span style="background:#169B62"></span><span style="background:#fff"></span><span style="background:#FF883E"></span></div>
+          <h3>Ireland</h3>
+          <p>English-speaking, tech-employer dense, with a two-year stay-back visa for master's graduates.</p>
+          <dl class="dest__facts">
+            <div><dt>Partner universities</dt><dd>9</dd></div>
+            <div><dt>Typical tuition</dt><dd>€12–20k/yr</dd></div>
+          </dl>
+        </article>
+        <article class="dest__card reveal" data-delay="1">
+          <div class="dest__flag" aria-hidden="true"><span style="background:#002395"></span><span style="background:#fff"></span><span style="background:#ED2939"></span></div>
+          <h3>France</h3>
+          <p>Grandes écoles and public universities with heavily subsidised fees — plus Paris.</p>
+          <dl class="dest__facts">
+            <div><dt>Partner universities</dt><dd>11</dd></div>
+            <div><dt>Typical tuition</dt><dd>€3–12k/yr</dd></div>
+          </dl>
+        </article>
+        <article class="dest__card reveal" data-delay="2">
+          <div class="dest__flag" aria-hidden="true"><span style="background:#fff"></span><span style="background:#003580"></span><span style="background:#fff"></span></div>
+          <h3>Finland</h3>
+          <p>Consistently the world's best education system, generous scholarships for strong applicants.</p>
+          <dl class="dest__facts">
+            <div><dt>Partner universities</dt><dd>8</dd></div>
+            <div><dt>Typical tuition</dt><dd>€8–14k/yr</dd></div>
+          </dl>
+        </article>
+      </div>
+    </section>
+
+    <!-- ======= PROCESS ======= -->
+    <section class="section" id="process">
+      <div class="section__head reveal">
+        <p class="eyebrow">How it works</p>
+        <h2>Four steps, one counsellor</h2>
+      </div>
+      <ol class="steps">
+        <li class="step reveal">
+          <span class="step__num" aria-hidden="true">01</span>
+          <h3>Discover</h3>
+          <p>A free 45-minute call to map your goals, budget and timeline. You leave with an honest read on your options — whether or not you hire us.</p>
+        </li>
+        <li class="step reveal" data-delay="1">
+          <span class="step__num" aria-hidden="true">02</span>
+          <h3>Shortlist</h3>
+          <p>Within two weeks: a ranked shortlist of universities with admission odds, costs and scholarship routes for each.</p>
+        </li>
+        <li class="step reveal" data-delay="2">
+          <span class="step__num" aria-hidden="true">03</span>
+          <h3>Apply</h3>
+          <p>We manage every application, essay draft and document — you see live status in a shared tracker.</p>
+        </li>
+        <li class="step reveal" data-delay="3">
+          <span class="step__num" aria-hidden="true">04</span>
+          <h3>Arrive</h3>
+          <p>Visa filed, housing sorted, orientation done. Our support runs until you're settled in your first semester.</p>
+        </li>
+      </ol>
+    </section>
+
+    <!-- ======= STATS + TESTIMONIALS ======= -->
+    <section class="proof" aria-labelledby="proofTitle">
+      <div class="proof__aurora" aria-hidden="true">
+        <div class="aurora aurora--gold"></div>
+        <div class="aurora aurora--blue"></div>
+      </div>
+      <div class="proof__inner">
+        <div class="section__head section__head--onDark reveal">
+          <p class="eyebrow eyebrow--gold">Outcomes, not promises</p>
+          <h2 id="proofTitle">The numbers our families check first</h2>
+        </div>
+        <div class="proof__stats">
+          <div class="proof__stat glass reveal"><span class="proof__num" data-count="1200" data-suffix="+">0</span><span>students placed</span></div>
+          <div class="proof__stat glass reveal" data-delay="1"><span class="proof__num" data-count="11">0</span><span>European countries</span></div>
+          <div class="proof__stat glass reveal" data-delay="2"><span class="proof__num" data-count="97" data-suffix="%">0</span><span>visa approval rate</span></div>
+          <div class="proof__stat glass reveal" data-delay="3"><span class="proof__num" data-prefix="€" data-count="2.4" data-decimals="1" data-suffix="M">0</span><span>scholarships secured</span></div>
+        </div>
+
+        <div class="quotes">
+          <figure class="quote glass reveal">
+            <blockquote>
+              <p>“Every other consultancy pushed the universities that paid them. VidyaVantage showed me the commission list upfront and still recommended a non-partner. That honesty is why I'm at TU Delft today.”</p>
+            </blockquote>
+            <figcaption><strong>Ananya Krishnan</strong><span>MSc Data Science, TU Delft · from Chennai</span></figcaption>
+          </figure>
+          <figure class="quote glass reveal" data-delay="1">
+            <blockquote>
+              <p>“The visa checklist alone was worth the fee. First attempt, no lawyer, permit approved in 19 days. Then they helped my parents book flights for graduation.”</p>
+            </blockquote>
+            <figcaption><strong>Rohan Mehta</strong><span>BSc Cyber Security, TalTech · from Pune</span></figcaption>
+          </figure>
+          <figure class="quote glass reveal" data-delay="2">
+            <blockquote>
+              <p>“As a small Estonian university we had no presence in India. Their team built our recruitment pipeline from zero to 40 enrolled students in two intakes — with verified documents every time.”</p>
+            </blockquote>
+            <figcaption><strong>Dr. Kristjan Tamm</strong><span>Head of Admissions, partner university · Tartu</span></figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======= FOR UNIVERSITIES ======= -->
+    <section class="section" id="universities">
+      <div class="uni">
+        <div class="uni__copy reveal">
+          <p class="eyebrow">For universities</p>
+          <h2>Recruit from India with a partner on the ground</h2>
+          <p class="section__lede section__lede--left">
+            We help European institutions build a trustworthy pipeline of well-prepared applicants — and help Indian
+            universities create exchange and pathway agreements in Europe.
+          </p>
+          <ul class="uni__list">
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <div><strong>Verified applicants only.</strong> Every transcript and bank statement checked before it reaches your admissions team.</div>
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <div><strong>Market intelligence.</strong> Programme-level demand data from the Indian market, twice a year, no charge for partners.</div>
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <div><strong>Retention, not just enrolment.</strong> Our settling-in support means partner-university dropout rates under 3%.</div>
+            </li>
+          </ul>
+          <a class="btn btn--navy" href="#contact">Explore a partnership
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+        </div>
+        <div class="uni__panel reveal" data-delay="1" aria-hidden="true">
+          <div class="uni__panel-card glass-light">
+            <span class="uni__panel-big">40+</span>
+            <span>institutional partnerships across Europe &amp; India</span>
+          </div>
+          <div class="uni__panel-card glass-light">
+            <span class="uni__panel-big">&lt;3%</span>
+            <span>first-year dropout among placed students</span>
+          </div>
+          <div class="uni__panel-card glass-light">
+            <span class="uni__panel-big">2×/yr</span>
+            <span>India market reports for partner institutions</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======= CONTACT ======= -->
+    <section class="contact" id="contact">
+      <div class="contact__inner">
+        <div class="contact__copy reveal">
+          <p class="eyebrow eyebrow--gold">Start the conversation</p>
+          <h2>Tell us where you want to be</h2>
+          <p>Whether you're a student planning your first semester abroad or a university planning your next intake — the first consultation is free and unconditional.</p>
+          <address class="contact__details">
+            <p>
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 21s-6.5-4.6-6.5-10a6.5 6.5 0 0 1 13 0c0 5.4-6.5 10-6.5 10Z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="10.5" r="2.3" stroke="currentColor" stroke-width="1.8"/></svg>
+              Rotermanni 6, 10111 Tallinn, Estonia
+            </p>
+            <p>
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="m4.5 7 7.5 6 7.5-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <a href="mailto:hello@vidyavantage.eu">hello@vidyavantage.eu</a>
+            </p>
+            <p>
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 4h3l1.5 4.5L8.5 10a12 12 0 0 0 5.5 5.5l1.5-2L20 15v3a2 2 0 0 1-2.2 2C10 19.2 4.8 14 4 6.2A2 2 0 0 1 6 4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+              <a href="tel:+37255512345">+372 5551 2345</a> · <a href="tel:+919876543210">+91 98765 43210</a>
+            </p>
+          </address>
+        </div>
+
+        <form class="form glass reveal" data-delay="1" id="contactForm" novalidate>
+          <div class="form__row">
+            <div class="form__field">
+              <label for="fName">Full name <span aria-hidden="true">*</span></label>
+              <input id="fName" name="name" type="text" autocomplete="name" required>
+            </div>
+            <div class="form__field">
+              <label for="fEmail">Email <span aria-hidden="true">*</span></label>
+              <input id="fEmail" name="email" type="email" autocomplete="email" required>
+            </div>
+          </div>
+          <div class="form__row">
+            <div class="form__field">
+              <label for="fPhone">Phone / WhatsApp</label>
+              <input id="fPhone" name="phone" type="tel" autocomplete="tel" placeholder="+91 …">
+            </div>
+            <div class="form__field">
+              <label for="fRole">I am a… <span aria-hidden="true">*</span></label>
+              <select id="fRole" name="role" required>
+                <option value="" selected disabled>Choose one</option>
+                <option>Student</option>
+                <option>Parent</option>
+                <option>University representative</option>
+                <option>Other</option>
+              </select>
+            </div>
+          </div>
+          <div class="form__field">
+            <label for="fMsg">What are you hoping to do? <span aria-hidden="true">*</span></label>
+            <textarea id="fMsg" name="message" rows="4" required placeholder="e.g. MSc in Computer Science in Germany, autumn 2026 intake…"></textarea>
+            <p class="form__hint">A sentence or two is plenty — we'll ask the right questions on the call.</p>
+          </div>
+          <button class="btn btn--gold btn--full" type="submit">
+            <span class="btn__label">Request my free consultation</span>
+            <span class="btn__spinner" aria-hidden="true"></span>
+          </button>
+          <p class="form__status" id="formStatus" role="status" aria-live="polite"></p>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <!-- ======= FOOTER ======= -->
+  <footer class="footer">
+    <div class="footer__inner">
+      <div class="footer__brand">
+        <span class="nav__word nav__word--footer">Vidya<em>Vantage</em></span>
+        <p>Educational consulting from Tallinn, Estonia — bridging students and universities across India and Europe since 2019.</p>
+      </div>
+      <nav class="footer__col" aria-label="Footer — students">
+        <h3>Students</h3>
+        <a href="#services">Services</a>
+        <a href="#destinations">Destinations</a>
+        <a href="#process">How it works</a>
+      </nav>
+      <nav class="footer__col" aria-label="Footer — institutions">
+        <h3>Institutions</h3>
+        <a href="#universities">Partnerships</a>
+        <a href="#contact">Contact us</a>
+      </nav>
+      <div class="footer__col">
+        <h3>Office</h3>
+        <p>Rotermanni 6<br>10111 Tallinn, Estonia</p>
+        <a href="mailto:hello@vidyavantage.eu">hello@vidyavantage.eu</a>
+      </div>
+    </div>
+    <p class="footer__legal">© 2026 VidyaVantage OÜ · Registry code 16123456 · All advice is independent; partner commissions are always disclosed.</p>
+  </footer>
+
+  <script src="script.js" defer></script>
+</body>
+</html>
