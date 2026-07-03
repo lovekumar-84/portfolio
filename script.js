@@ -63,49 +63,6 @@
     });
   }
 
-  /* ---------- animated counters ---------- */
-  function animateCount(el) {
-    var target = parseFloat(el.dataset.count);
-    var decimals = parseInt(el.dataset.decimals || "0", 10);
-    var prefix = el.dataset.prefix || "";
-    var suffix = el.dataset.suffix || "";
-    var duration = 1600;
-
-    if (prefersReducedMotion) {
-      el.textContent = prefix + target.toFixed(decimals).replace(/\B(?=(\d{3})+(?!\d))/g, ",") + suffix;
-      return;
-    }
-    var start = null;
-    function frame(ts) {
-      if (!start) start = ts;
-      var p = Math.min((ts - start) / duration, 1);
-      var eased = 1 - Math.pow(1 - p, 3); // ease-out cubic
-      var value = (target * eased).toFixed(decimals);
-      el.textContent = prefix + value.replace(/\B(?=(\d{3})+(?!\d))/g, ",") + suffix;
-      if (p < 1) requestAnimationFrame(frame);
-    }
-    requestAnimationFrame(frame);
-  }
-
-  if ("IntersectionObserver" in window) {
-    var countObserver = new IntersectionObserver(
-      function (entries) {
-        entries.forEach(function (entry) {
-          if (entry.isIntersecting) {
-            animateCount(entry.target);
-            countObserver.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0.6 }
-    );
-    document.querySelectorAll("[data-count]").forEach(function (el) {
-      countObserver.observe(el);
-    });
-  } else {
-    document.querySelectorAll("[data-count]").forEach(animateCount);
-  }
-
   /* ---------- contact form ---------- */
   var form = document.getElementById("contactForm");
   var status = document.getElementById("formStatus");
@@ -175,7 +132,7 @@
     window.setTimeout(function () {
       button.classList.remove("is-loading");
       button.disabled = false;
-      label.textContent = "Request my free consultation";
+      label.textContent = "Book consultation";
       form.reset();
       status.textContent = "Thank you — we'll reply within one working day.";
     }, 900);
