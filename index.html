@@ -8,19 +8,49 @@
   <link rel="preload" href="fonts/Sora-var.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="fonts/Inter-var.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="styles.css">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230F172A'/%3E%3Cpath d='M8 9l8 14 8-14' fill='none' stroke='%23D9A62E' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230F172A'/%3E%3Ccircle cx='16' cy='16' r='11' fill='%23D9A62E'/%3E%3Cg transform='rotate(45 16 16)' fill='%230F172A'%3E%3Cpath d='M16 6c-2 2.6-3 5.3-3 8.4 0 3.1 1.1 5.5 3 6.8 1.9-1.3 3-3.7 3-6.8 0-3.1-1-5.8-3-8.4Z'/%3E%3Cpath d='M13.4 15.5 10.6 18l.4 2.6 3-2.2Z'/%3E%3Cpath d='M18.6 15.5 21.4 18l-.4 2.6-3-2.2Z'/%3E%3Cpath d='M16 22.2 17 24l-1 4-1-4Z'/%3E%3C/g%3E%3C/svg%3E">
 </head>
 <body>
+  <!-- Brand emblem (recreated from the VidyaVantage logo): gold disc + rocket -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <linearGradient id="gDisc" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#EBCB84"/>
+        <stop offset="1" stop-color="#B98A26"/>
+      </linearGradient>
+      <linearGradient id="gBody" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#F3DC9F"/>
+        <stop offset="1" stop-color="#C89B3C"/>
+      </linearGradient>
+      <linearGradient id="gFlame" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#DFB05A"/>
+        <stop offset="1" stop-color="#A16207"/>
+      </linearGradient>
+      <symbol id="vvEmblem" viewBox="0 0 200 200">
+        <circle cx="100" cy="100" r="76" fill="url(#gDisc)"/>
+        <g transform="rotate(45 100 100)" stroke="#12224A" stroke-linejoin="round">
+          <path d="M86 136 L90 148 L72 176 L80 142 Z" fill="url(#gFlame)" stroke-width="3.5"/>
+          <path d="M114 136 L110 148 L128 176 L120 142 Z" fill="url(#gFlame)" stroke-width="3.5"/>
+          <path d="M100 142 L107 158 L100 198 L93 158 Z" fill="url(#gFlame)" stroke-width="3.5"/>
+          <path d="M84 96 C72 104 66 118 64 136 L83 122 Z" fill="url(#gFlame)" stroke-width="4"/>
+          <path d="M116 96 C128 104 134 118 136 136 L117 122 Z" fill="url(#gFlame)" stroke-width="4"/>
+          <path d="M100 28 C87 45 81 63 81 84 C81 105 88 121 100 130 C112 121 119 105 119 84 C119 63 113 45 100 28 Z" fill="url(#gBody)" stroke-width="4"/>
+          <path d="M92 129 L108 129 L104 142 L96 142 Z" fill="url(#gFlame)" stroke-width="3.5"/>
+          <circle cx="100" cy="70" r="10" fill="#12224A" stroke="none"/>
+          <circle cx="100" cy="92" r="3.5" fill="#12224A" stroke="none"/>
+          <circle cx="100" cy="103" r="2.5" fill="#12224A" stroke="none"/>
+        </g>
+      </symbol>
+    </defs>
+  </svg>
+
   <a class="skip-link" href="#main">Skip to main content</a>
 
   <!-- ======= NAVIGATION ======= -->
   <header class="nav" id="nav">
     <div class="nav__inner">
       <a href="#top" class="nav__brand" aria-label="VidyaVantage home">
-        <svg class="nav__mark" width="34" height="34" viewBox="0 0 32 32" aria-hidden="true">
-          <rect width="32" height="32" rx="8" fill="currentColor" opacity="0.12"/>
-          <path d="M8 9l8 14 8-14" fill="none" stroke="var(--gold-bright)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+        <svg class="nav__mark" width="36" height="36" aria-hidden="true"><use href="#vvEmblem"/></svg>
         <span class="nav__word">Vidya<em>Vantage</em></span>
       </a>
       <nav class="nav__links" aria-label="Primary">
@@ -52,6 +82,8 @@
         <div class="aurora aurora--teal"></div>
       </div>
       <div class="hero__grid" aria-hidden="true"></div>
+
+      <svg class="hero__mark" aria-hidden="true" focusable="false"><use href="#vvEmblem"/></svg>
 
       <div class="hero__inner">
         <div class="hero__copy">

@@ -327,6 +327,34 @@ h3 { font-size: 19px; font-weight: 600; }
   -webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 30%, black 30%, transparent 75%);
 }
 
+.hero__mark {
+  position: absolute;
+  top: 50%;
+  right: clamp(-160px, -6vw, -40px);
+  width: clamp(340px, 44vw, 660px);
+  height: auto;
+  aspect-ratio: 1;
+  transform: translateY(-50%);
+  opacity: .16;
+  pointer-events: none;
+  animation: markFloat 14s ease-in-out infinite alternate;
+  will-change: transform;
+}
+@keyframes markFloat {
+  from { transform: translateY(-52%); }
+  to   { transform: translateY(-46%); }
+}
+@media (max-width: 960px) {
+  .hero__mark {
+    top: 12%;
+    right: -18vw;
+    width: 62vw;
+    transform: none;
+    opacity: .12;
+    animation: none;
+  }
+}
+
 .hero__inner {
   position: relative;
   max-width: 820px;
