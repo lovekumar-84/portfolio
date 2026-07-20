@@ -4,7 +4,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { join, extname, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Store } from './store.js';
-import { deriveMatch, WICKET_KINDS } from './engine.js';
+import { deriveMatch, aggregateStats, pointsTable, WICKET_KINDS } from './engine.js';
 
 const ROOT = join(fileURLToPath(import.meta.url), '..', '..');
 const PUBLIC = join(ROOT, 'public');
@@ -66,6 +66,38 @@ function matchView(match) {
   };
 }
 
+function matchSummary(m) {
+  const derived = deriveMatch(m, squadSizes(m));
+  return {
+    id: m.id,
+    teamAId: m.teamAId,
+    teamBId: m.teamBId,
+    oversPerInnings: m.oversPerInnings,
+    status: m.status,
+    createdAt: m.createdAt,
+    tournamentId: m.tournamentId || null,
+    result: derived.result,
+    innings: derived.innings.map((inn) => ({
+      battingTeamId: inn.battingTeamId,
+      runs: inn.runs,
+      wickets: inn.wickets,
+      overs: inn.overs,
+    })),
+  };
+}
+
+function leaderboards(matches) {
+  const rows = aggregateStats(matches, squadSizes);
+  const named = rows.map((r) => {
+    const p = store.player(r.player);
+    return { ...r, name: p?.name || r.player, teamName: p ? store.team(p.teamId)?.name : '' };
+  });
+  return {
+    batting: [...named].filter((r) => r.innings > 0).sort((a, b) => b.runs - a.runs).slice(0, 25),
+    bowling: [...named].filter((r) => r.bowlInnings > 0).sort((a, b) => b.wickets - a.wickets || a.economy - b.economy).slice(0, 25),
+  };
+}
+
 // Auto-advance match state after events are appended.
 function reconcile(match) {
   const derived = deriveMatch(match, squadSizes(match));
@@ -100,26 +132,48 @@ const routes = [
     return player;
   }],
 
-  ['GET', /^\/api\/matches$/, () => ({
-    matches: store.data.matches.map((m) => {
-      const v = matchView(m);
-      return { id: m.id, teamAId: m.teamAId, teamBId: m.teamBId, oversPerInnings: m.oversPerInnings, status: m.status, result: v.derived.result };
-    }),
+  ['GET', /^\/api\/matches$/, () => ({ matches: store.data.matches.map(matchSummary) })],
+
+  ['GET', /^\/api\/tournaments$/, () => ({
+    tournaments: store.data.tournaments.map((t) => ({
+      ...t,
+      matches: store.data.matches.filter((m) => m.tournamentId === t.id).length,
+    })),
   })],
 
+  ['POST', /^\/api\/tournaments$/, (m, body) => {
+    if (!body.name?.trim()) throw { status: 400, message: 'name required' };
+    const t = { id: store.id(), name: body.name.trim(), createdAt: new Date().toISOString() };
+    store.data.tournaments.push(t);
+    store.save();
+    return t;
+  }],
+
+  ['GET', /^\/api\/tournaments\/(\w+)$/, (m) => {
+    const t = store.data.tournaments.find((x) => x.id === m[1]);
+    if (!t) throw { status: 404, message: 'tournament not found' };
+    const matches = store.data.matches.filter((x) => x.tournamentId === t.id);
+    const points = pointsTable(matches, squadSizes).map((r) => ({ ...r, teamName: store.team(r.teamId)?.name || r.teamId }));
+    return { ...t, matches: matches.map(matchSummary), points, leaderboard: leaderboards(matches) };
+  }],
+
   ['POST', /^\/api\/matches$/, (m, body) => {
-    const { teamAId, teamBId, oversPerInnings = 20, tossWonBy, tossDecision } = body;
+    const { teamAId, teamBId, oversPerInnings = 20, tossWonBy, tossDecision, tournamentId = null } = body;
     if (!store.team(teamAId) || !store.team(teamBId) || teamAId === teamBId) {
       throw { status: 400, message: 'two distinct valid teams required' };
     }
     if (![teamAId, teamBId].includes(tossWonBy) || !['bat', 'bowl'].includes(tossDecision)) {
       throw { status: 400, message: 'toss required: tossWonBy + tossDecision(bat|bowl)' };
     }
+    if (tournamentId && !store.data.tournaments.some((t) => t.id === tournamentId)) {
+      throw { status: 400, message: 'unknown tournament' };
+    }
     const battingFirst = tossDecision === 'bat' ? tossWonBy : (tossWonBy === teamAId ? teamBId : teamAId);
     const match = {
       id: store.id(),
       teamAId,
       teamBId,
+      tournamentId,
       oversPerInnings: Math.min(Math.max(+oversPerInnings || 20, 1), 50),
       toss: { wonBy: tossWonBy, decision: tossDecision },
       status: 'live',
@@ -204,18 +258,7 @@ const routes = [
     return matchView(match);
   }],
 
-  ['GET', /^\/api\/leaderboard$/, async () => {
-    const { aggregateStats } = await import('./engine.js');
-    const rows = aggregateStats(store.data.matches, squadSizes);
-    const named = rows.map((r) => {
-      const p = store.player(r.player);
-      return { ...r, name: p?.name || r.player, teamName: p ? store.team(p.teamId)?.name : '' };
-    });
-    return {
-      batting: [...named].sort((a, b) => b.runs - a.runs).slice(0, 20),
-      bowling: [...named].filter((r) => r.wickets > 0 || r.economy !== null).sort((a, b) => b.wickets - a.wickets || a.economy - b.economy).slice(0, 20),
-    };
-  }],
+  ['GET', /^\/api\/leaderboard$/, () => leaderboards(store.data.matches)],
 ];
 
 const server = createServer(async (req, res) => {

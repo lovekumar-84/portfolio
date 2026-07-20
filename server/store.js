@@ -4,15 +4,16 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { randomUUID } from 'node:crypto';
 
-const EMPTY = { teams: [], players: [], matches: [] };
+const EMPTY = { teams: [], players: [], matches: [], tournaments: [] };
 
 export class Store {
   constructor(path) {
     this.path = path;
+    // Merge over EMPTY so db files written by older versions gain new collections.
+    this.data = structuredClone(EMPTY);
     if (existsSync(path)) {
-      this.data = JSON.parse(readFileSync(path, 'utf8'));
-    } else {
-      this.data = structuredClone(EMPTY);
+      Object.assign(this.data, JSON.parse(readFileSync(path, 'utf8')));
+      for (const key of Object.keys(EMPTY)) this.data[key] ??= [];
     }
   }
 

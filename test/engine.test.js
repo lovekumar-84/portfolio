@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { deriveInnings, deriveMatch } from '../server/engine.js';
+import { deriveInnings, deriveMatch, pointsTable } from '../server/engine.js';
 
 const OPTS = { oversLimit: 2, battingSquadSize: 4 };
 const openers = { type: 'openers', striker: 'A', nonStriker: 'B' };
@@ -125,6 +125,27 @@ test('deriveMatch produces result by wickets and by runs', () => {
     [openers, ...Array.from({ length: 12 }, () => ball())]), squads);
   assert.equal(defend.result.winnerTeamId, 'T1');
   assert.equal(defend.result.by, '4 runs');
+});
+
+test('pointsTable: points, W/L, and NRR ordering', () => {
+  // T1 bats 2 overs for 12; T2 chases and falls short on 6 (all overs used)
+  const match = {
+    id: 'm1',
+    status: 'completed',
+    oversPerInnings: 2,
+    innings: [
+      { battingTeamId: 'T1', bowlingTeamId: 'T2', events: [openers, ...Array.from({ length: 12 }, () => ball({ runs: 1 }))] },
+      { battingTeamId: 'T2', bowlingTeamId: 'T1', events: [{ type: 'openers', striker: 'C', nonStriker: 'D' }, ...Array.from({ length: 12 }, (_, i) => ball({ runs: i % 2 }))] },
+    ],
+  };
+  const table = pointsTable([match], () => ({ T1: 4, T2: 4 }));
+  assert.equal(table[0].teamId, 'T1');
+  assert.equal(table[0].points, 2);
+  assert.equal(table[0].won, 1);
+  assert.equal(table[1].lost, 1);
+  // T1: 12 runs in 2 ov, conceded 6 in 2 ov -> NRR (6 - 3) = +3
+  assert.equal(table[0].nrr, 3);
+  assert.equal(table[1].nrr, -3);
 });
 
 test('endInnings event finishes the innings early', () => {

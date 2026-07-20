@@ -205,7 +205,7 @@ export function aggregateStats(matches, squadSizes) {
   const stats = new Map(); // playerId -> { runs, balls, fours, sixes, outs, wickets, ballsBowled, runsConceded, matches: Set }
   const get = (p) => {
     if (!stats.has(p)) {
-      stats.set(p, { runs: 0, balls: 0, fours: 0, sixes: 0, outs: 0, wickets: 0, ballsBowled: 0, runsConceded: 0, matches: new Set() });
+      stats.set(p, { runs: 0, balls: 0, fours: 0, sixes: 0, outs: 0, batInns: 0, bowlInns: 0, wickets: 0, ballsBowled: 0, runsConceded: 0, matches: new Set() });
     }
     return stats.get(p);
   };
@@ -219,12 +219,14 @@ export function aggregateStats(matches, squadSizes) {
         st.balls += b.balls;
         st.fours += b.fours;
         st.sixes += b.sixes;
+        st.batInns += 1;
         if (b.out && b.out.how !== 'retired') st.outs += 1;
         st.matches.add(match.id);
       }
       for (const [p, bw] of inn.bowlers) {
         const st = get(p);
         st.wickets += bw.wickets;
+        st.bowlInns += 1;
         st.ballsBowled += bw.balls;
         st.runsConceded += bw.runs;
         st.matches.add(match.id);
@@ -236,6 +238,8 @@ export function aggregateStats(matches, squadSizes) {
     rows.push({
       player,
       matches: st.matches.size,
+      innings: st.batInns,
+      bowlInnings: st.bowlInns,
       runs: st.runs,
       balls: st.balls,
       strikeRate: st.balls ? +((st.runs / st.balls) * 100).toFixed(1) : 0,
@@ -247,4 +251,48 @@ export function aggregateStats(matches, squadSizes) {
     });
   }
   return rows;
+}
+
+// League standings: 2 pts a win, 1 a tie/no-result. NRR per standard rules —
+// a side bowled out is charged its full over quota, not the overs it survived.
+export function pointsTable(matches, squadSizes) {
+  const table = new Map();
+  const row = (t) => {
+    if (!table.has(t)) {
+      table.set(t, { teamId: t, played: 0, won: 0, lost: 0, tied: 0, noResult: 0, points: 0, runsFor: 0, ballsFor: 0, runsAgainst: 0, ballsAgainst: 0 });
+    }
+    return table.get(t);
+  };
+  for (const match of matches) {
+    if (match.status !== 'completed') continue;
+    const d = deriveMatch(match, squadSizes(match));
+    if (d.innings.length < 2) continue;
+    const a = d.innings[0].battingTeamId;
+    const b = d.innings[1].battingTeamId;
+    row(a).played += 1;
+    row(b).played += 1;
+    if (!d.result || !d.result.winnerTeamId) {
+      const key = d.result ? 'tied' : 'noResult';
+      for (const t of [a, b]) { row(t)[key] += 1; row(t).points += 1; }
+    } else {
+      row(d.result.winnerTeamId).won += 1;
+      row(d.result.winnerTeamId).points += 2;
+      row(d.result.winnerTeamId === a ? b : a).lost += 1;
+    }
+    for (const inn of d.innings) {
+      const balls = inn.completeReason === 'allout' ? match.oversPerInnings * 6 : inn.legalBalls;
+      row(inn.battingTeamId).runsFor += inn.runs;
+      row(inn.battingTeamId).ballsFor += balls;
+      row(inn.bowlingTeamId).runsAgainst += inn.runs;
+      row(inn.bowlingTeamId).ballsAgainst += balls;
+    }
+  }
+  return [...table.values()]
+    .map((r) => ({
+      ...r,
+      nrr: r.ballsFor && r.ballsAgainst
+        ? +((r.runsFor / (r.ballsFor / 6)) - (r.runsAgainst / (r.ballsAgainst / 6))).toFixed(3)
+        : 0,
+    }))
+    .sort((x, y) => y.points - x.points || y.nrr - x.nrr);
 }
