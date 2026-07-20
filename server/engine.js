@@ -30,6 +30,7 @@ export function deriveInnings(events, { oversLimit, battingSquadSize, target = n
     complete: false,
     completeReason: null,
     thisOver: [], // display tokens for the over in progress
+    log: [], // per-delivery commentary feed
   };
 
   const batter = (p) => {
@@ -65,6 +66,7 @@ export function deriveInnings(events, { oversLimit, battingSquadSize, target = n
       if (s.striker === null) s.striker = ev.player;
       else s.nonStriker = ev.player;
       s.needsBatter = false;
+      s.log.push({ type: 'newBatter', over: null, player: ev.player });
       continue;
     }
 
@@ -73,6 +75,8 @@ export function deriveInnings(events, { oversLimit, battingSquadSize, target = n
     const { runs = 0, extra = null, wicket = null } = ev;
     const bw = bowler(ev.bowler);
     const bt = batter(s.striker);
+    const strikerAtDelivery = s.striker;
+    const ballLabel = `${Math.floor(s.legalBalls / 6) + 1}.${(s.legalBalls % 6) + 1}`;
     const legal = extra !== 'wide' && extra !== 'noball';
     let ranRuns = runs; // physical runs that rotate strike
 
@@ -129,6 +133,17 @@ export function deriveInnings(events, { oversLimit, battingSquadSize, target = n
     } else if (ranRuns % 2 === 1) {
       [s.striker, s.nonStriker] = [s.nonStriker, s.striker];
     }
+
+    s.log.push({
+      type: 'ball',
+      over: ballLabel,
+      bowler: ev.bowler,
+      striker: strikerAtDelivery,
+      runs,
+      extra,
+      wicket: wicket ? { how: wicket.how, out: wicket.out || strikerAtDelivery } : null,
+      token: s.thisOver[s.thisOver.length - 1],
+    });
 
     // Terminal conditions, checked after every delivery.
     if (target !== null && s.runs >= target) finish('target');

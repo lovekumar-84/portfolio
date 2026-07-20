@@ -177,7 +177,21 @@ async function renderNewMatch() {
 }
 
 /* ---------- match / scoring ---------- */
+let matchTab = 'live';
+let matchTabFor = null;
+
+function tabBar(tabs, active, id) {
+  return `<div class="tabs">${tabs.map(([key, label]) =>
+    `<button class="${key === active ? 'active' : ''}" data-tab="${key}">${label}</button>`).join('')}</div>`;
+}
+
+function wireTabs(id) {
+  app.querySelectorAll('[data-tab]').forEach((b) =>
+    b.addEventListener('click', () => { matchTab = b.dataset.tab; renderMatch(id); }));
+}
+
 async function renderMatch(id) {
+  if (matchTabFor !== id) { matchTab = 'live'; matchTabFor = id; }
   const [teams, match] = await Promise.all([getTeams(), api(`/matches/${id}`)]);
   const inn = match.derived.innings[match.derived.innings.length - 1];
   const rawInn = match.innings[match.innings.length - 1];
@@ -194,16 +208,22 @@ async function renderMatch(id) {
         </div>
         <button class="ghost" onclick="location.hash='#/'">‹ Back</button>
       </div>
-      <div class="balls">${inn.thisOver.map((b) => `<span class="ball-chip ${b.includes('W') ? 'w' : b === '4' ? 'four' : b === '6' ? 'six' : ''}">${esc(b)}</span>`).join('')}</div>
     </div>`;
+
+  const allScorecards = () => match.derived.innings.map((i) => scorecardHtml(i, teams)).join('');
+  const allCommentary = () => match.derived.innings.slice().reverse().map((i) =>
+    `<div class="card"><h2>${esc(teamById(teams, i.battingTeamId)?.name)} innings</h2>${commentaryHtml(i, teams)}</div>`).join('');
 
   /* completed */
   if (match.status === 'completed') {
     const r = match.derived.result;
+    if (matchTab === 'live') matchTab = 'scorecard';
     app.innerHTML = `
       <div class="card"><h2>${r ? (r.winnerTeamId ? `🏆 ${esc(teamById(teams, r.winnerTeamId).name)} won by ${esc(r.by)}` : esc(r.by)) : 'Match over'}</h2>
       <button class="ghost" onclick="location.hash='#/'">‹ Back to matches</button></div>
-      ${match.derived.innings.map((i) => scorecardHtml(i, teams)).join('')}`;
+      ${tabBar([['scorecard', 'Scorecard'], ['commentary', 'Commentary']], matchTab, id)}
+      ${matchTab === 'commentary' ? allCommentary() : allScorecards()}`;
+    wireTabs(id);
     return;
   }
 
@@ -212,7 +232,9 @@ async function renderMatch(id) {
     app.innerHTML = `${header}
       <div class="card"><h2>End of innings — ${esc(bowlTeam.name)} need ${inn.runs + 1} to win</h2>
       <button class="primary" style="width:100%" id="start-2nd">Start 2nd innings</button></div>
-      ${scorecardHtml(inn, teams)}`;
+      ${tabBar([['scorecard', 'Scorecard'], ['commentary', 'Commentary']], matchTab === 'commentary' ? 'commentary' : 'scorecard', id)}
+      ${matchTab === 'commentary' ? allCommentary() : allScorecards()}`;
+    wireTabs(id);
     document.getElementById('start-2nd').addEventListener('click', async () => {
       await api(`/matches/${id}/start-second-innings`, { method: 'POST' });
       renderMatch(id);
@@ -253,13 +275,14 @@ async function renderMatch(id) {
   };
   const bw = bowlerId ? inn.bowlers[bowlerId] : null;
 
-  app.innerHTML = `${header}
+  const liveCard = `
     <div class="card">
       <table>
         <tr><th>Batter</th><th class="num">R</th><th class="num">B</th><th class="num">4s/6s</th></tr>
         ${batterRow(inn.striker, true)}${batterRow(inn.nonStriker, false)}
       </table>
       <h3>Bowling${bowlerId ? `: ${esc(name(bowlerId))} ${bw ? `${Math.floor(bw.balls / 6)}.${bw.balls % 6}-${bw.runs}-${bw.wickets}` : ''}` : ''}</h3>
+      <div class="balls">${inn.thisOver.length ? inn.thisOver.map((b) => ballChip(b)).join('') : '<span class="muted">New over</span>'}</div>
       <div class="pad">
         ${[0, 1, 2, 3].map((r) => `<button data-runs="${r}">${r}</button>`).join('')}
         <button class="info" data-runs="4">4</button>
@@ -275,8 +298,13 @@ async function renderMatch(id) {
         <button class="ghost grow" id="undo">↩ Undo</button>
         <button class="ghost grow" id="change-bowler">Change bowler</button>
       </div>
-    </div>
-    ${scorecardHtml(inn, teams)}`;
+    </div>`;
+
+  app.innerHTML = `${header}
+    ${tabBar([['live', 'Live'], ['scorecard', 'Scorecard'], ['commentary', 'Commentary']], matchTab, id)}
+    ${matchTab === 'scorecard' ? allScorecards() : matchTab === 'commentary' ? allCommentary() : liveCard}`;
+  wireTabs(id);
+  if (matchTab !== 'live') return;
 
   const needBowler = (cb) => {
     if (bowlerId) return cb(bowlerId);
@@ -333,6 +361,11 @@ async function renderMatch(id) {
   });
 }
 
+function ballChip(b) {
+  const cls = b.includes('W') ? 'w' : b === '4' ? 'four' : b === '6' ? 'six' : '';
+  return `<span class="ball-chip ${cls}">${esc(b)}</span>`;
+}
+
 function scorecardHtml(inn, teams) {
   const name = (pid) => playerName(teams, pid);
   const outDesc = (o) => {
@@ -345,21 +378,70 @@ function scorecardHtml(inn, teams) {
   return `<div class="card">
     <h2>${esc(batTeam?.name || '')} — ${inn.runs}/${inn.wickets} (${inn.overs})</h2>
     <table>
-      <tr><th>Batter</th><th></th><th class="num">R</th><th class="num">B</th></tr>
+      <tr><th>Batter</th><th class="num">R</th><th class="num">B</th><th class="num">4s</th><th class="num">6s</th><th class="num">SR</th></tr>
       ${inn.battingOrder.map((pid) => {
-        const b = inn.batters[pid] || (inn.batters.get && inn.batters.get(pid));
-        return `<tr><td>${esc(name(pid))}</td><td class="muted">${esc(outDesc(b.out))}</td><td class="num">${b.runs}</td><td class="num">${b.balls}</td></tr>`;
+        const b = inn.batters[pid];
+        const sr = b.balls ? ((b.runs / b.balls) * 100).toFixed(0) : '—';
+        return `<tr><td><strong>${esc(name(pid))}</strong><br><span class="muted">${esc(outDesc(b.out))}</span></td>
+          <td class="num"><strong>${b.runs}</strong></td><td class="num">${b.balls}</td>
+          <td class="num">${b.fours}</td><td class="num">${b.sixes}</td><td class="num">${sr}</td></tr>`;
       }).join('')}
     </table>
     <p class="muted" style="margin-top:0.4rem">Extras: ${inn.extras.wides} wd, ${inn.extras.noballs} nb, ${inn.extras.byes} b, ${inn.extras.legbyes} lb</p>
     <h3>Bowling</h3>
     <table>
-      <tr><th>Bowler</th><th class="num">O</th><th class="num">R</th><th class="num">W</th></tr>
+      <tr><th>Bowler</th><th class="num">O</th><th class="num">R</th><th class="num">W</th><th class="num">Econ</th></tr>
       ${Object.entries(inn.bowlers).map(([pid, bw]) =>
-        `<tr><td>${esc(name(pid))}</td><td class="num">${Math.floor(bw.balls / 6)}.${bw.balls % 6}</td><td class="num">${bw.runs}</td><td class="num">${bw.wickets}</td></tr>`).join('')}
+        `<tr><td>${esc(name(pid))}</td><td class="num">${Math.floor(bw.balls / 6)}.${bw.balls % 6}</td><td class="num">${bw.runs}</td><td class="num">${bw.wickets}</td><td class="num">${bw.balls ? (bw.runs / (bw.balls / 6)).toFixed(1) : '—'}</td></tr>`).join('')}
     </table>
     ${inn.fow.length ? `<p class="muted" style="margin-top:0.4rem">FoW: ${inn.fow.map((f) => `${f.runs}/${f.wickets} (${esc(name(f.player))}, ${f.over})`).join(' · ')}</p>` : ''}
   </div>`;
+}
+
+/* CricHeroes-style ball-by-ball feed, newest first, grouped by over */
+function commentaryHtml(inn, teams) {
+  const name = (pid) => playerName(teams, pid);
+  const desc = (e) => {
+    if (e.wicket) {
+      const w = e.wicket.how === 'runout' ? `run out (${name(e.wicket.out)})` : e.wicket.how;
+      return `<strong>OUT!</strong> ${esc(w)}${e.runs ? `, ${e.runs} run${e.runs > 1 ? 's' : ''}` : ''}`;
+    }
+    if (e.extra === 'wide') return `wide${e.runs ? `, ${e.runs} extra run${e.runs > 1 ? 's' : ''}` : ''}`;
+    if (e.extra === 'noball') return `no ball${e.runs ? `, ${e.runs} off the bat` : ''}`;
+    if (e.extra === 'bye') return `${e.runs} bye${e.runs !== 1 ? 's' : ''}`;
+    if (e.extra === 'legbye') return `${e.runs} leg bye${e.runs !== 1 ? 's' : ''}`;
+    if (e.runs === 0) return 'no run';
+    if (e.runs === 4) return '<strong>FOUR!</strong>';
+    if (e.runs === 6) return '<strong>SIX!</strong>';
+    return `${e.runs} run${e.runs > 1 ? 's' : ''}`;
+  };
+
+  // group ball entries into overs
+  const overs = [];
+  for (const e of inn.log) {
+    if (e.type === 'newBatter') {
+      (overs[overs.length - 1] || (overs[overs.length] = { n: 1, balls: [] })).balls.push(e);
+      continue;
+    }
+    const n = +e.over.split('.')[0];
+    if (!overs.length || overs[overs.length - 1].n !== n) overs.push({ n, balls: [] });
+    overs[overs.length - 1].balls.push(e);
+  }
+
+  if (!overs.length) return '<p class="muted">No balls bowled yet.</p>';
+
+  return overs.slice().reverse().map((ov) => {
+    const balls = ov.balls.filter((e) => e.type !== 'newBatter');
+    const runs = balls.reduce((t, e) => t + e.runs + (e.extra === 'wide' || e.extra === 'noball' ? 1 : 0), 0);
+    const wkts = balls.filter((e) => e.wicket).length;
+    return `
+      <div class="over-head"><span>Over ${ov.n} — ${runs} run${runs !== 1 ? 's' : ''}${wkts ? `, ${wkts} wkt${wkts > 1 ? 's' : ''}` : ''}</span>
+        <span class="balls">${balls.map((e) => ballChip(e.token)).join('')}</span></div>
+      ${ov.balls.slice().reverse().map((e) => e.type === 'newBatter'
+        ? `<div class="comm-item"><span class="comm-over"></span><div class="muted">${esc(name(e.player))} comes to the crease</div></div>`
+        : `<div class="comm-item"><span class="comm-over">${esc(e.over)}</span>${ballChip(e.token)}
+           <div>${esc(name(e.bowler))} to ${esc(name(e.striker))}, ${desc(e)}</div></div>`).join('')}`;
+  }).join('');
 }
 
 /* ---------- leaderboard ---------- */

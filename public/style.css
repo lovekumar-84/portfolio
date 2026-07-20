@@ -137,6 +137,34 @@ tr.active td { color: var(--accent); font-weight: 600; }
 .badge.live { background: var(--danger); color: #fff; }
 .badge.completed { background: var(--accent); color: #052e16; }
 
+.tabs { display: flex; gap: 0.4rem; margin-bottom: 0.8rem; }
+.tabs button { flex: 1; padding: 0.5rem 0; font-size: 0.9rem; border: 1px solid #334155; }
+.tabs button.active { background: var(--accent2); color: #082f49; font-weight: 700; border-color: var(--accent2); }
+
+.over-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--card2);
+  padding: 0.45rem 0.6rem;
+  border-radius: 8px;
+  margin: 0.8rem 0 0.3rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+.over-head .balls { margin-top: 0; justify-content: flex-end; }
+.comm-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0.2rem;
+  border-bottom: 1px solid #2b3a52;
+  font-size: 0.9rem;
+}
+.comm-item:last-child { border-bottom: none; }
+.comm-over { min-width: 2.2rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+
 .modal-backdrop {
   position: fixed;
   inset: 0;
