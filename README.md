@@ -16,6 +16,10 @@ npm test           # scoring-engine unit tests
 Open it on your phone (same Wi-Fi: `http://<your-ip>:3000`) — the UI is built
 for one-thumb scoring at the ground.
 
+**Admin access:** adding teams and players requires an admin login (👤 button,
+top right). The default password is `cricket123`; override it for real
+deployments with `ADMIN_PASSWORD=yoursecret npm start`.
+
 ## What it does today (MVP)
 
 | Feature | Status |

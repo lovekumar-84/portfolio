@@ -11,6 +11,15 @@ const PUBLIC = join(ROOT, 'public');
 const PORT = process.env.PORT || 3000;
 const store = new Store(process.env.DB_PATH || join(ROOT, 'data', 'db.json'));
 
+// Team & player management is admin-only. Set ADMIN_PASSWORD in the
+// environment for real deployments; the default is for local testing.
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'cricket123';
+const requireAdmin = (req) => {
+  if (req.headers['x-admin-token'] !== ADMIN_PASSWORD) {
+    throw { status: 401, message: 'admin login required' };
+  }
+};
+
 const MIME = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
@@ -91,7 +100,7 @@ function leaderboards(matches) {
   const rows = aggregateStats(matches, squadSizes);
   const named = rows.map((r) => {
     const p = store.player(r.player);
-    return { ...r, name: p?.name || r.player, teamName: p ? store.team(p.teamId)?.name : '' };
+    return { ...r, name: p?.name || r.player, teamId: p?.teamId || null, teamName: p ? store.team(p.teamId)?.name : '' };
   });
   return {
     batting: [...named].filter((r) => r.innings > 0).sort((a, b) => b.runs - a.runs).slice(0, 25),
@@ -127,17 +136,28 @@ function reconcile(match) {
 }
 
 const routes = [
+  ['POST', /^\/api\/admin\/login$/, (m, body) => {
+    if (body.password !== ADMIN_PASSWORD) throw { status: 401, message: 'wrong password' };
+    return { token: ADMIN_PASSWORD };
+  }],
+
   ['GET', /^\/api\/teams$/, () => ({ teams: store.data.teams.map((t) => ({ ...t, players: store.teamPlayers(t.id) })) })],
 
-  ['POST', /^\/api\/teams$/, (m, body) => {
+  // Optionally creates the roster in the same call: body.players = ["name", …]
+  ['POST', /^\/api\/teams$/, (m, body, req) => {
+    requireAdmin(req);
     if (!body.name?.trim()) throw { status: 400, message: 'name required' };
     const team = { id: store.id(), name: body.name.trim(), city: body.city?.trim() || '' };
     store.data.teams.push(team);
+    for (const n of body.players || []) {
+      if (String(n).trim()) store.data.players.push({ id: store.id(), teamId: team.id, name: String(n).trim() });
+    }
     store.save();
-    return team;
+    return { ...team, players: store.teamPlayers(team.id) };
   }],
 
-  ['POST', /^\/api\/teams\/(\w+)\/players$/, (m, body) => {
+  ['POST', /^\/api\/teams\/(\w+)\/players$/, (m, body, req) => {
+    requireAdmin(req);
     const team = store.team(m[1]);
     if (!team) throw { status: 404, message: 'team not found' };
     if (!body.name?.trim()) throw { status: 400, message: 'name required' };
@@ -291,7 +311,7 @@ const server = createServer(async (req, res) => {
       const m = url.pathname.match(pattern);
       if (m && req.method === method) {
         const body = method === 'POST' ? await readBody(req) : null;
-        return json(res, 200, await handler(m, body));
+        return json(res, 200, await handler(m, body, req));
       }
     }
     if (url.pathname.startsWith('/api/')) return json(res, 404, { error: 'not found' });

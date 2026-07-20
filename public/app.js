@@ -2,9 +2,12 @@
 const app = document.getElementById('app');
 let teamsCache = null;
 
+const isAdmin = () => !!localStorage.getItem('adminToken');
+
 const api = async (path, opts = {}) => {
+  const token = localStorage.getItem('adminToken');
   const res = await fetch('/api' + path, {
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(token ? { 'x-admin-token': token } : {}) },
     ...opts,
     body: opts.body ? JSON.stringify(opts.body) : undefined,
   });
@@ -12,6 +15,48 @@ const api = async (path, opts = {}) => {
   if (!res.ok) throw new Error(data.error || 'request failed');
   return data;
 };
+
+/* ---------- admin login ---------- */
+function setAdminUi() {
+  const btn = document.getElementById('admin-btn');
+  btn.textContent = isAdmin() ? '👤 Admin' : '👤';
+  btn.classList.toggle('on', isAdmin());
+}
+
+document.getElementById('back-btn').addEventListener('click', () => {
+  if (location.hash && location.hash !== '#/') history.back();
+  else location.hash = '#/';
+});
+
+document.getElementById('admin-btn').addEventListener('click', () => {
+  if (isAdmin()) {
+    const m = modal('Admin', `<p class="muted" style="margin-bottom:0.8rem">You are logged in as admin.</p>
+      <div class="choice-grid"><button class="danger" id="logout">Log out</button><button id="stay">Stay logged in</button></div>`);
+    m.querySelector('#logout').addEventListener('click', () => {
+      localStorage.removeItem('adminToken');
+      m.remove();
+      setAdminUi();
+      route();
+    });
+    m.querySelector('#stay').addEventListener('click', () => m.remove());
+    return;
+  }
+  const m = modal('Admin login', `
+    <label>Password</label><input id="admin-pass" type="password" placeholder="Admin password">
+    <p class="muted" style="margin:0.5rem 0">Admins can add teams and players.</p>
+    <button class="primary" style="width:100%" id="do-login">Log in</button>`);
+  m.querySelector('#do-login').addEventListener('click', async () => {
+    try {
+      const { token } = await api('/admin/login', { method: 'POST', body: { password: m.querySelector('#admin-pass').value } });
+      localStorage.setItem('adminToken', token);
+      m.remove();
+      setAdminUi();
+      route();
+    } catch (err) {
+      alert(err.message);
+    }
+  });
+});
 
 const getTeams = async (force = false) => {
   if (!teamsCache || force) teamsCache = (await api('/teams')).teams;
@@ -51,6 +96,7 @@ function pickPlayer(title, players, cb) {
 const routes = [
   [/^#?\/?$/, renderMatches, 'matches'],
   [/^#\/teams$/, renderTeams, 'teams'],
+  [/^#\/team\/(\w+)$/, (m) => renderTeamDetail(m[1]), 'teams'],
   [/^#\/new-match$/, renderNewMatch, 'matches'],
   [/^#\/match\/(\w+)$/, (m) => renderMatch(m[1]), 'matches'],
   [/^#\/leaderboard$/, renderLeaderboard, 'leaderboard'],
@@ -136,54 +182,88 @@ async function renderMatches() {
 async function renderTeams() {
   const teams = await getTeams(true);
   app.innerHTML = `
-    <div class="card">
+    ${isAdmin() ? `<div class="card">
       <h2>Add team</h2>
       <div class="row">
         <input id="team-name" class="grow" placeholder="Team name (e.g. Vilnius CC)">
         <input id="team-city" class="grow" placeholder="City (e.g. Riga, Tallinn)">
         <button class="primary" id="add-team">Add</button>
       </div>
-    </div>
-    ${teams.map((t) => `
-      <div class="card">
-        <div class="row spread">
-          <h2>${esc(t.name)} ${t.city ? `<span class="muted">· ${esc(t.city)}</span>` : ''}</h2>
-          <span class="badge">${t.players.length} players</span>
-        </div>
-        ${t.players.map((p) => `<div class="list-item" style="cursor:default">${esc(p.name)}</div>`).join('')}
-        <div class="row" style="margin-top:0.6rem">
-          <input class="grow" placeholder="Player name" data-team="${t.id}">
-          <button class="info" data-add-player="${t.id}">Add player</button>
-        </div>
-      </div>`).join('')}`;
+    </div>` : ''}
+    <div class="card">
+      <h2>Teams</h2>
+      ${teams.length === 0 ? `<p class="muted">No teams yet.${isAdmin() ? '' : ' Log in as admin (👤 top right) to add teams.'}</p>` : ''}
+      ${teams.map((t) => `<div class="list-item" onclick="location.hash='#/team/${t.id}'">
+        <strong>${esc(t.name)}</strong>${t.city ? `<span class="muted">${esc(t.city)}</span>` : ''}
+      </div>`).join('')}
+    </div>`;
 
-  document.getElementById('add-team').addEventListener('click', async () => {
+  document.getElementById('add-team')?.addEventListener('click', async () => {
     const name = document.getElementById('team-name').value;
     if (!name.trim()) return;
     await api('/teams', { method: 'POST', body: { name, city: document.getElementById('team-city').value } });
     renderTeams();
   });
-  app.querySelectorAll('[data-add-player]').forEach((btn) =>
-    btn.addEventListener('click', async () => {
-      const teamId = btn.dataset.addPlayer;
-      const input = app.querySelector(`input[data-team="${teamId}"]`);
-      if (!input.value.trim()) return;
-      await api(`/teams/${teamId}/players`, { method: 'POST', body: { name: input.value } });
-      renderTeams();
-    }));
+}
+
+async function renderTeamDetail(id) {
+  const [teams, lb, { matches }] = await Promise.all([getTeams(true), api('/leaderboard'), api('/matches')]);
+  const team = teamById(teams, id);
+  if (!team) { app.innerHTML = '<div class="card">Team not found.</div>'; return; }
+
+  // team totals across completed matches
+  let played = 0, won = 0, totalRuns = 0;
+  for (const m of matches) {
+    if (m.teamAId !== id && m.teamBId !== id) continue;
+    if (m.status !== 'completed') continue;
+    played += 1;
+    if (m.result?.winnerTeamId === id) won += 1;
+    for (const inn of m.innings) if (inn.battingTeamId === id) totalRuns += inn.runs;
+  }
+  const teamLb = {
+    batting: lb.batting.filter((r) => r.teamId === id),
+    bowling: lb.bowling.filter((r) => r.teamId === id),
+  };
+  app.innerHTML = `
+    <div class="card">
+      <h2>${esc(team.name)} ${team.city ? `<span class="muted">· ${esc(team.city)}</span>` : ''}</h2>
+      <p class="muted" style="margin-top:0.3rem">Matches: ${played} · Won: ${won} · Total runs: ${totalRuns}</p>
+    </div>
+    <div class="card">
+      <h2>Squad (${team.players.length})</h2>
+      ${team.players.length === 0 ? '<p class="muted">No players yet.</p>' : ''}
+      ${team.players.map((p) => `<div class="list-item" style="cursor:default">${esc(p.name)}</div>`).join('')}
+      ${isAdmin() ? `<div class="row" style="margin-top:0.6rem">
+        <input class="grow" id="new-player" placeholder="Player name">
+        <button class="info" id="add-player">Add player</button>
+      </div>` : ''}
+    </div>
+    ${played || teamLb.batting.length ? leaderboardCards(teamLb) : ''}`;
+
+  document.getElementById('add-player')?.addEventListener('click', async () => {
+    const input = document.getElementById('new-player');
+    if (!input.value.trim()) return;
+    await api(`/teams/${id}/players`, { method: 'POST', body: { name: input.value } });
+    renderTeamDetail(id);
+  });
 }
 
 /* ---------- new match ---------- */
 async function renderNewMatch() {
   const [teams, { tournaments }] = await Promise.all([getTeams(true), api('/tournaments')]);
   const ready = teams.filter((t) => t.players.length >= 2);
-  if (ready.length < 2) {
+  if (ready.length < 2 && !isAdmin()) {
     app.innerHTML = `<div class="card"><h2>New match</h2>
       <p class="muted">You need at least two teams with 2+ players each.
-      <a href="#/teams" style="color:var(--accent2)">Create teams first →</a></p></div>`;
+      Ask an admin to add them (👤 top right).</p></div>`;
     return;
   }
-  const opts = ready.map((t) => `<option value="${t.id}">${esc(t.name)}</option>`).join('');
+  const newTeamOpt = isAdmin() ? '<option value="__new__">＋ Create new team…</option>' : '';
+  const newTeamRow = (side) => `<div id="new-team-${side}-row" style="display:none">
+    <label>New team ${side.toUpperCase()} name</label><input id="new-team-${side}-name" placeholder="Team name">
+    <label>Players (comma separated, min 2)</label><input id="new-team-${side}-players" placeholder="e.g. Rony, Anand, Tanvir">
+  </div>`;
+  const opts = ready.map((t) => `<option value="${t.id}">${esc(t.name)}</option>`).join('') + newTeamOpt;
   app.innerHTML = `<div class="card"><h2>New match</h2>
     <label>League</label>
     <select id="tourn">
@@ -194,7 +274,9 @@ async function renderNewMatch() {
     <div id="new-league-row" style="display:none"><label>New league name</label>
       <input id="new-league-name" placeholder="e.g. Baltic Premier Liiga"></div>
     <label>Team A</label><select id="team-a">${opts}</select>
+    ${newTeamRow('a')}
     <label>Team B</label><select id="team-b">${opts}</select>
+    ${newTeamRow('b')}
     <label>Overs per innings</label>
     <select id="overs"><option>5</option><option>6</option><option>8</option><option selected>10</option><option>15</option><option>20</option><option>30</option><option>40</option><option>50</option></select>
     <label>When</label>
@@ -220,10 +302,44 @@ async function renderNewMatch() {
   document.getElementById('tourn').addEventListener('change', (e) => {
     document.getElementById('new-league-row').style.display = e.target.value === '__new__' ? '' : 'none';
   });
+  const updateTossLabels = () => {
+    const nameOf = (side) => {
+      const v = document.getElementById(`team-${side}`).value;
+      if (v === '__new__') return document.getElementById(`new-team-${side}-name`).value.trim() || `Team ${side.toUpperCase()}`;
+      return teamById(teams, v)?.name || `Team ${side.toUpperCase()}`;
+    };
+    const tossSel = document.getElementById('toss-won');
+    tossSel.options[0].text = nameOf('a');
+    tossSel.options[1].text = nameOf('b');
+  };
+  for (const side of ['a', 'b']) {
+    document.getElementById(`team-${side}`).addEventListener('change', (e) => {
+      document.getElementById(`new-team-${side}-row`).style.display = e.target.value === '__new__' ? '' : 'none';
+      updateTossLabels();
+    });
+    document.getElementById(`new-team-${side}-name`).addEventListener('input', updateTossLabels);
+  }
+  updateTossLabels();
+
+  // Resolve a side to a team id, creating the team (with roster) if "new" chosen.
+  const resolveTeam = async (side) => {
+    const sel = document.getElementById(`team-${side}`).value;
+    if (sel !== '__new__') return sel;
+    const name = document.getElementById(`new-team-${side}-name`).value;
+    const players = document.getElementById(`new-team-${side}-players`).value.split(',').map((s) => s.trim()).filter(Boolean);
+    if (!name.trim()) throw new Error(`Give team ${side.toUpperCase()} a name`);
+    if (players.length < 2) throw new Error(`Team ${side.toUpperCase()} needs at least 2 players`);
+    return (await api('/teams', { method: 'POST', body: { name, players } })).id;
+  };
 
   startBtn.addEventListener('click', async () => {
-    const teamAId = document.getElementById('team-a').value;
-    const teamBId = document.getElementById('team-b').value;
+    let teamAId, teamBId;
+    try {
+      teamAId = await resolveTeam('a');
+      teamBId = await resolveTeam('b');
+    } catch (err) {
+      return alert(err.message);
+    }
     if (teamAId === teamBId) return alert('Pick two different teams');
     let tournamentId = document.getElementById('tourn').value || null;
     if (tournamentId === '__new__') {
@@ -589,8 +705,32 @@ function leaderboardCards(lb) {
 }
 
 async function renderLeaderboard() {
-  const lb = await api('/leaderboard');
-  app.innerHTML = leaderboardCards(lb);
+  const [teams, { matches }] = await Promise.all([getTeams(), api('/matches')]);
+  const rows = teams.map((t) => {
+    let played = 0, won = 0, totalRuns = 0, wktsTaken = 0;
+    for (const m of matches) {
+      if (m.teamAId !== t.id && m.teamBId !== t.id) continue;
+      if (m.status !== 'completed') continue;
+      played += 1;
+      if (m.result?.winnerTeamId === t.id) won += 1;
+      for (const inn of m.innings) {
+        if (inn.battingTeamId === t.id) totalRuns += inn.runs;
+        else wktsTaken += inn.wickets;
+      }
+    }
+    return { team: t, played, won, totalRuns, wktsTaken };
+  }).sort((a, b) => b.won - a.won || b.totalRuns - a.totalRuns);
+  app.innerHTML = `
+    <div class="card">
+      <h2>📊 Team stats</h2>
+      <p class="muted" style="margin-bottom:0.5rem">Tap a team for its full scorecard and player stats.</p>
+      ${rows.length === 0 ? '<p class="muted">No teams yet.</p>' : ''}
+      ${rows.map((r) => `<div class="list-item" onclick="location.hash='#/team/${r.team.id}'">
+        <div><strong>${esc(r.team.name)}</strong><br>
+          <span class="muted">P: ${r.played} · W: ${r.won} · Runs scored: ${r.totalRuns} · Wkts taken: ${r.wktsTaken}</span></div>
+        <span class="badge">${r.team.players.length} players</span>
+      </div>`).join('')}
+    </div>`;
 }
 
 /* ---------- leagues ---------- */
@@ -651,4 +791,5 @@ async function renderTournament(id) {
     b.addEventListener('click', () => { tournTab = b.dataset.tab; renderTournament(id); }));
 }
 
+setAdminUi();
 route();

@@ -32,6 +32,17 @@ header {
   gap: 0.5rem;
 }
 header h1 { font-size: 1.1rem; }
+#back-btn {
+  background: var(--card2);
+  border: none;
+  color: var(--text);
+  border-radius: 8px;
+  font-size: 1.2rem;
+  line-height: 1;
+  padding: 0.35rem 0.7rem;
+  cursor: pointer;
+}
+#admin-btn.on { background: var(--accent); color: #052e16; }
 nav { display: flex; gap: 0.25rem; }
 nav a {
   color: var(--muted);
