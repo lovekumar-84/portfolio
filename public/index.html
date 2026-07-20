@@ -9,10 +9,7 @@
 </head>
 <body>
 <header>
-  <div class="row" style="gap:0.4rem">
-    <button id="back-btn" aria-label="Back">‹</button>
-    <h1>🏏 Baltic Cricket</h1>
-  </div>
+  <h1>🏏 Baltic Cricket</h1>
   <nav>
     <a href="#/" data-nav="matches">Home</a>
     <a href="#/tournaments" data-nav="tournaments">Leagues</a>
@@ -21,7 +18,10 @@
     <a href="javascript:void(0)" id="admin-btn" title="Admin login">👤</a>
   </nav>
 </header>
-<main id="app">Loading…</main>
+<main>
+  <div id="back-row" hidden><button id="back-btn" aria-label="Back">‹ Back</button></div>
+  <div id="app">Loading…</div>
+</main>
 <script src="/app.js"></script>
 </body>
 </html>

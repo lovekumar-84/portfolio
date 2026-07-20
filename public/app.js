@@ -28,6 +28,30 @@ document.getElementById('back-btn').addEventListener('click', () => {
   else location.hash = '#/';
 });
 
+// Ask for the admin password; calls onSuccess() once logged in, onCancel() if dismissed.
+function adminLoginModal(onSuccess, onCancel) {
+  const m = modal('Admin login', `
+    <label>Password</label><input id="admin-pass" type="password" placeholder="Admin password">
+    <p class="muted" style="margin:0.5rem 0">Admins can add teams and players.</p>
+    <button class="primary" style="width:100%" id="do-login">Log in</button>`);
+  let done = false;
+  m.querySelector('#do-login').addEventListener('click', async () => {
+    try {
+      const { token } = await api('/admin/login', { method: 'POST', body: { password: m.querySelector('#admin-pass').value } });
+      localStorage.setItem('adminToken', token);
+      done = true;
+      m.remove();
+      setAdminUi();
+      onSuccess?.();
+    } catch (err) {
+      alert(err.message);
+    }
+  });
+  new MutationObserver((_, obs) => {
+    if (!document.body.contains(m)) { obs.disconnect(); if (!done) onCancel?.(); }
+  }).observe(document.body, { childList: true });
+}
+
 document.getElementById('admin-btn').addEventListener('click', () => {
   if (isAdmin()) {
     const m = modal('Admin', `<p class="muted" style="margin-bottom:0.8rem">You are logged in as admin.</p>
@@ -41,21 +65,7 @@ document.getElementById('admin-btn').addEventListener('click', () => {
     m.querySelector('#stay').addEventListener('click', () => m.remove());
     return;
   }
-  const m = modal('Admin login', `
-    <label>Password</label><input id="admin-pass" type="password" placeholder="Admin password">
-    <p class="muted" style="margin:0.5rem 0">Admins can add teams and players.</p>
-    <button class="primary" style="width:100%" id="do-login">Log in</button>`);
-  m.querySelector('#do-login').addEventListener('click', async () => {
-    try {
-      const { token } = await api('/admin/login', { method: 'POST', body: { password: m.querySelector('#admin-pass').value } });
-      localStorage.setItem('adminToken', token);
-      m.remove();
-      setAdminUi();
-      route();
-    } catch (err) {
-      alert(err.message);
-    }
-  });
+  adminLoginModal(() => route());
 });
 
 const getTeams = async (force = false) => {
@@ -106,6 +116,7 @@ const routes = [
 
 async function route() {
   const hash = location.hash || '#/';
+  document.getElementById('back-row').hidden = /^#?\/?$/.test(hash);
   for (const [pattern, handler, nav] of routes) {
     const m = hash.match(pattern);
     if (m) {
@@ -252,13 +263,7 @@ async function renderTeamDetail(id) {
 async function renderNewMatch() {
   const [teams, { tournaments }] = await Promise.all([getTeams(true), api('/tournaments')]);
   const ready = teams.filter((t) => t.players.length >= 2);
-  if (ready.length < 2 && !isAdmin()) {
-    app.innerHTML = `<div class="card"><h2>New match</h2>
-      <p class="muted">You need at least two teams with 2+ players each.
-      Ask an admin to add them (👤 top right).</p></div>`;
-    return;
-  }
-  const newTeamOpt = isAdmin() ? '<option value="__new__">＋ Create new team…</option>' : '';
+  const newTeamOpt = '<option value="__new__">＋ Create new team…</option>';
   const newTeamRow = (side) => `<div id="new-team-${side}-row" style="display:none">
     <label>New team ${side.toUpperCase()} name</label><input id="new-team-${side}-name" placeholder="Team name">
     <label>Players (comma separated, min 2)</label><input id="new-team-${side}-players" placeholder="e.g. Rony, Anand, Tanvir">
@@ -314,8 +319,20 @@ async function renderNewMatch() {
   };
   for (const side of ['a', 'b']) {
     document.getElementById(`team-${side}`).addEventListener('change', (e) => {
-      document.getElementById(`new-team-${side}-row`).style.display = e.target.value === '__new__' ? '' : 'none';
-      updateTossLabels();
+      const isNew = e.target.value === '__new__';
+      const reveal = () => {
+        document.getElementById(`new-team-${side}-row`).style.display = isNew ? '' : 'none';
+        updateTossLabels();
+      };
+      if (isNew && !isAdmin()) {
+        adminLoginModal(reveal, () => {
+          e.target.selectedIndex = 0;
+          document.getElementById(`new-team-${side}-row`).style.display = 'none';
+          updateTossLabels();
+        });
+      } else {
+        reveal();
+      }
     });
     document.getElementById(`new-team-${side}-name`).addEventListener('input', updateTossLabels);
   }
