@@ -1,0 +1,15 @@
+{
+  "name": "baltic-cricket",
+  "version": "0.1.0",
+  "description": "Grassroots cricket scoring app (CricHeroes-style MVP) for the Baltic states",
+  "type": "module",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}
