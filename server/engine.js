@@ -53,6 +53,11 @@ export function deriveInnings(events, { oversLimit, battingSquadSize, target = n
   for (const ev of events) {
     if (s.complete) break;
 
+    if (ev.type === 'endInnings') {
+      finish('declared');
+      continue;
+    }
+
     if (ev.type === 'openers') {
       batter(ev.striker);
       batter(ev.nonStriker);

@@ -177,6 +177,18 @@ const routes = [
     return matchView(match);
   }],
 
+  // End the current innings early (declaration, time limit, rain, …).
+  // Event-sourced like everything else, so it can be undone.
+  ['POST', /^\/api\/matches\/(\w+)\/end-innings$/, (m) => {
+    const match = store.match(m[1]);
+    if (!match) throw { status: 404, message: 'match not found' };
+    if (match.status !== 'live') throw { status: 400, message: 'match is not live' };
+    match.innings[match.innings.length - 1].events.push({ type: 'endInnings' });
+    reconcile(match);
+    store.save();
+    return matchView(match);
+  }],
+
   ['POST', /^\/api\/matches\/(\w+)\/start-second-innings$/, (m) => {
     const match = store.match(m[1]);
     if (!match) throw { status: 404, message: 'match not found' };

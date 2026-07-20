@@ -127,6 +127,13 @@ test('deriveMatch produces result by wickets and by runs', () => {
   assert.equal(defend.result.by, '4 runs');
 });
 
+test('endInnings event finishes the innings early', () => {
+  const s = deriveInnings([openers, ball({ runs: 4 }), { type: 'endInnings' }], OPTS);
+  assert.equal(s.complete, true);
+  assert.equal(s.completeReason, 'declared');
+  assert.equal(s.runs, 4);
+});
+
 test('undo is just dropping the last event', () => {
   const events = [openers, ball({ runs: 4 }), ball({ wicket: { how: 'bowled' } })];
   const before = deriveInnings(events.slice(0, 2), OPTS);

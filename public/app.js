@@ -297,6 +297,7 @@ async function renderMatch(id) {
       <div class="row" style="margin-top:0.6rem">
         <button class="ghost grow" id="undo">↩ Undo</button>
         <button class="ghost grow" id="change-bowler">Change bowler</button>
+        <button class="ghost grow" id="end-innings" style="color:var(--danger)">⏹ End ${match.innings.length === 1 ? 'innings' : 'match'}</button>
       </div>
     </div>`;
 
@@ -351,6 +352,23 @@ async function renderMatch(id) {
   document.getElementById('undo').addEventListener('click', async () => {
     await api(`/matches/${id}/undo`, { method: 'POST' });
     renderMatch(id);
+  });
+  document.getElementById('end-innings').addEventListener('click', () => {
+    const second = match.innings.length === 2;
+    const m = modal(second ? 'End the match now?' : 'End the innings now?',
+      `<p class="muted" style="margin-bottom:0.8rem">${esc(batTeam.name)} will finish on ${inn.runs}/${inn.wickets} (${inn.overs} ov).
+       ${second ? 'The result will be decided on the current scores.' : `${esc(bowlTeam.name)} will bat next.`}
+       You can undo this afterwards.</p>
+       <div class="choice-grid">
+         <button class="danger" id="confirm-end">Yes, end ${second ? 'match' : 'innings'}</button>
+         <button id="cancel-end">Cancel</button>
+       </div>`);
+    m.querySelector('#cancel-end').addEventListener('click', () => m.remove());
+    m.querySelector('#confirm-end').addEventListener('click', async () => {
+      m.remove();
+      await api(`/matches/${id}/end-innings`, { method: 'POST' });
+      renderMatch(id);
+    });
   });
   document.getElementById('change-bowler').addEventListener('click', () => {
     sessionStorage.removeItem(`bowler:${id}:${match.innings.length}:${Math.floor(inn.legalBalls / 6)}`);
