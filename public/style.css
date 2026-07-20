@@ -136,6 +136,8 @@ tr.active td { color: var(--accent); font-weight: 600; }
 }
 .badge.live { background: var(--danger); color: #fff; }
 .badge.completed { background: var(--accent); color: #052e16; }
+.badge.upcoming { background: var(--warn); color: #451a03; }
+.section-title { font-size: 0.95rem; margin: 0.4rem 0 0.6rem; }
 
 .match-card { cursor: pointer; }
 .score-row { padding: 0.15rem 0; }

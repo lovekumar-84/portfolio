@@ -75,6 +75,7 @@ function matchSummary(m) {
     oversPerInnings: m.oversPerInnings,
     status: m.status,
     createdAt: m.createdAt,
+    scheduledAt: m.scheduledAt || null,
     tournamentId: m.tournamentId || null,
     result: derived.result,
     innings: derived.innings.map((inn) => ({
@@ -96,6 +97,20 @@ function leaderboards(matches) {
     batting: [...named].filter((r) => r.innings > 0).sort((a, b) => b.runs - a.runs).slice(0, 25),
     bowling: [...named].filter((r) => r.bowlInnings > 0).sort((a, b) => b.wickets - a.wickets || a.economy - b.economy).slice(0, 25),
   };
+}
+
+function startMatch(match, tossWonBy, tossDecision) {
+  if (![match.teamAId, match.teamBId].includes(tossWonBy) || !['bat', 'bowl'].includes(tossDecision)) {
+    throw { status: 400, message: 'toss required: tossWonBy + tossDecision(bat|bowl)' };
+  }
+  const battingFirst = tossDecision === 'bat' ? tossWonBy : (tossWonBy === match.teamAId ? match.teamBId : match.teamAId);
+  match.toss = { wonBy: tossWonBy, decision: tossDecision };
+  match.status = 'live';
+  match.innings = [{
+    battingTeamId: battingFirst,
+    bowlingTeamId: battingFirst === match.teamAId ? match.teamBId : match.teamAId,
+    events: [],
+  }];
 }
 
 // Auto-advance match state after events are appended.
@@ -157,34 +172,40 @@ const routes = [
     return { ...t, matches: matches.map(matchSummary), points, leaderboard: leaderboards(matches) };
   }],
 
+  // Create a match. With a toss it goes live immediately; without one it is
+  // scheduled as 'upcoming' (optionally with a scheduledAt start time) and
+  // goes live later via /start, when the toss actually happens.
   ['POST', /^\/api\/matches$/, (m, body) => {
-    const { teamAId, teamBId, oversPerInnings = 20, tossWonBy, tossDecision, tournamentId = null } = body;
+    const { teamAId, teamBId, oversPerInnings = 20, tossWonBy, tossDecision, tournamentId = null, scheduledAt = null } = body;
     if (!store.team(teamAId) || !store.team(teamBId) || teamAId === teamBId) {
       throw { status: 400, message: 'two distinct valid teams required' };
-    }
-    if (![teamAId, teamBId].includes(tossWonBy) || !['bat', 'bowl'].includes(tossDecision)) {
-      throw { status: 400, message: 'toss required: tossWonBy + tossDecision(bat|bowl)' };
     }
     if (tournamentId && !store.data.tournaments.some((t) => t.id === tournamentId)) {
       throw { status: 400, message: 'unknown tournament' };
     }
-    const battingFirst = tossDecision === 'bat' ? tossWonBy : (tossWonBy === teamAId ? teamBId : teamAId);
     const match = {
       id: store.id(),
       teamAId,
       teamBId,
       tournamentId,
       oversPerInnings: Math.min(Math.max(+oversPerInnings || 20, 1), 50),
-      toss: { wonBy: tossWonBy, decision: tossDecision },
-      status: 'live',
+      toss: null,
+      status: 'upcoming',
       createdAt: new Date().toISOString(),
-      innings: [{
-        battingTeamId: battingFirst,
-        bowlingTeamId: battingFirst === teamAId ? teamBId : teamAId,
-        events: [],
-      }],
+      scheduledAt: scheduledAt || null,
+      innings: [],
     };
     store.data.matches.push(match);
+    if (tossWonBy) startMatch(match, tossWonBy, tossDecision);
+    store.save();
+    return matchView(match);
+  }],
+
+  ['POST', /^\/api\/matches\/(\w+)\/start$/, (m, body) => {
+    const match = store.match(m[1]);
+    if (!match) throw { status: 404, message: 'match not found' };
+    if (match.status !== 'upcoming') throw { status: 400, message: 'match already started' };
+    startMatch(match, body.tossWonBy, body.tossDecision);
     store.save();
     return matchView(match);
   }],
@@ -200,6 +221,7 @@ const routes = [
     const match = store.match(m[1]);
     if (!match) throw { status: 404, message: 'match not found' };
     if (match.status === 'completed') throw { status: 400, message: 'match is over' };
+    if (match.innings.length === 0) throw { status: 400, message: 'match not started — record the toss first' };
     const inn = match.innings[match.innings.length - 1];
     const ev = body.event || {};
     if (!['openers', 'newBatter', 'ball'].includes(ev.type)) {
@@ -220,6 +242,7 @@ const routes = [
   ['POST', /^\/api\/matches\/(\w+)\/undo$/, (m) => {
     const match = store.match(m[1]);
     if (!match) throw { status: 404, message: 'match not found' };
+    if (match.innings.length === 0) throw { status: 400, message: 'nothing to undo' };
     const inn = match.innings[match.innings.length - 1];
     if (inn.events.length === 0 && match.innings.length === 2) {
       match.innings.pop(); // undo across the innings break

@@ -77,8 +77,11 @@ async function route() {
 }
 window.addEventListener('hashchange', route);
 
-/* ---------- matches list ---------- */
-let matchesFilter = 'all';
+/* ---------- home ---------- */
+function fmtWhen(iso) {
+  if (!iso) return '';
+  return new Date(iso).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+}
 
 function matchCard(m, teams, tournaments) {
   const league = tournaments?.find((t) => t.id === m.tournamentId);
@@ -95,30 +98,38 @@ function matchCard(m, teams, tournaments) {
   };
   // batting-first team on top
   const order = m.innings.length ? [m.innings[0].battingTeamId, m.innings[0].battingTeamId === m.teamAId ? m.teamBId : m.teamAId] : [m.teamAId, m.teamBId];
+  const badge = m.status === 'live' ? 'live' : m.status === 'completed' ? 'completed' : m.status === 'upcoming' ? 'upcoming' : '';
   return `<div class="card match-card" onclick="location.hash='#/match/${m.id}'">
     <div class="row spread" style="margin-bottom:0.4rem">
       <span class="muted">${league ? esc(league.name) : 'Friendly'} · ${m.oversPerInnings} ov${date ? ' · ' + date : ''}</span>
-      <span class="badge ${m.status === 'live' ? 'live' : m.status === 'completed' ? 'completed' : ''}">${m.status.replace('_', ' ')}</span>
+      <span class="badge ${badge}">${m.status.replace('_', ' ')}</span>
     </div>
     ${order.map(scoreRow).join('')}
-    ${result ? `<div class="muted" style="margin-top:0.4rem">${result}</div>` : ''}
+    ${m.status === 'upcoming'
+      ? `<div class="muted" style="margin-top:0.4rem">🕐 ${m.scheduledAt ? `Scheduled to begin at ${fmtWhen(m.scheduledAt)}` : 'Not started yet — tap to record the toss'}</div>`
+      : result ? `<div class="muted" style="margin-top:0.4rem">${result}</div>` : ''}
   </div>`;
 }
 
 async function renderMatches() {
   const [teams, { matches }, { tournaments }] = await Promise.all([getTeams(), api('/matches'), api('/tournaments')]);
-  const filtered = matches.filter((m) =>
-    matchesFilter === 'all' ? true : matchesFilter === 'live' ? m.status !== 'completed' : m.status === 'completed');
+  const live = matches.filter((m) => m.status === 'live' || m.status === 'innings_break');
+  const upcoming = matches.filter((m) => m.status === 'upcoming')
+    .sort((a, b) => (a.scheduledAt || a.createdAt || '').localeCompare(b.scheduledAt || b.createdAt || ''));
+  const past = matches.filter((m) => m.status === 'completed').slice().reverse();
+  const section = (title, cards) => cards.length
+    ? `<h2 class="section-title">${title}</h2>${cards}` : '';
   app.innerHTML = `
     <button class="primary" style="width:100%;margin-bottom:0.8rem" onclick="location.hash='#/new-match'">＋ New match</button>
-    <div class="tabs">
-      ${[['all', 'All'], ['live', 'Live'], ['past', 'Past']].map(([k, l]) =>
-        `<button class="${matchesFilter === k ? 'active' : ''}" data-filter="${k}">${l}</button>`).join('')}
-    </div>
-    ${filtered.length === 0 ? '<div class="card"><p class="muted">No matches here yet. Create teams, then start your first match.</p></div>' : ''}
-    ${filtered.slice().reverse().map((m) => matchCard(m, teams, tournaments)).join('')}`;
-  app.querySelectorAll('[data-filter]').forEach((b) =>
-    b.addEventListener('click', () => { matchesFilter = b.dataset.filter; renderMatches(); }));
+    ${matches.length === 0 ? '<div class="card"><p class="muted">Welcome! Create teams, then start or schedule your first match.</p></div>' : ''}
+    ${section('🔴 Live now', live.map((m) => matchCard(m, teams, tournaments)).join(''))}
+    ${section('🕐 Upcoming matches', upcoming.map((m) => matchCard(m, teams, tournaments)).join(''))}
+    ${tournaments.length ? `<h2 class="section-title">🏆 Leagues</h2>
+      <div class="card">${tournaments.map((t) => `<div class="list-item" onclick="event.stopPropagation();location.hash='#/tournament/${t.id}'">
+        <strong>${esc(t.name)}</strong><span class="badge">${t.matches} matches</span></div>`).join('')}
+      </div>` : ''}
+    ${section('✅ Recent results', past.slice(0, 5).map((m) => matchCard(m, teams, tournaments)).join(''))}
+    ${past.length > 5 ? `<p class="muted" style="text-align:center">…and ${past.length - 5} more in each league's Matches tab</p>` : ''}`;
 }
 
 /* ---------- teams ---------- */
@@ -174,32 +185,67 @@ async function renderNewMatch() {
   }
   const opts = ready.map((t) => `<option value="${t.id}">${esc(t.name)}</option>`).join('');
   app.innerHTML = `<div class="card"><h2>New match</h2>
+    <label>League</label>
+    <select id="tourn">
+      <option value="">Friendly (no league)</option>
+      ${tournaments.map((t) => `<option value="${t.id}">${esc(t.name)}</option>`).join('')}
+      <option value="__new__">＋ Create new league…</option>
+    </select>
+    <div id="new-league-row" style="display:none"><label>New league name</label>
+      <input id="new-league-name" placeholder="e.g. Baltic Premier Liiga"></div>
     <label>Team A</label><select id="team-a">${opts}</select>
     <label>Team B</label><select id="team-b">${opts}</select>
     <label>Overs per innings</label>
     <select id="overs"><option>5</option><option>6</option><option>8</option><option selected>10</option><option>15</option><option>20</option><option>30</option><option>40</option><option>50</option></select>
-    <label>League</label>
-    <select id="tourn"><option value="">Friendly (no league)</option>
-      ${tournaments.map((t) => `<option value="${t.id}">${esc(t.name)}</option>`).join('')}</select>
-    <label>Toss won by</label><select id="toss-won"><option value="A">Team A</option><option value="B">Team B</option></select>
-    <label>Decision</label><select id="toss-dec"><option value="bat">Bat first</option><option value="bowl">Bowl first</option></select>
+    <label>When</label>
+    <select id="when"><option value="now">Start now (toss done)</option><option value="later">Schedule for later</option></select>
+    <div id="toss-rows">
+      <label>Toss won by</label><select id="toss-won"><option value="A">Team A</option><option value="B">Team B</option></select>
+      <label>Decision</label><select id="toss-dec"><option value="bat">Bat first</option><option value="bowl">Bowl first</option></select>
+    </div>
+    <div id="schedule-row" style="display:none">
+      <label>Start time</label><input id="start-time" type="datetime-local">
+    </div>
     <button class="primary" style="width:100%;margin-top:1rem" id="start">Start match</button></div>`;
   document.getElementById('team-b').selectedIndex = Math.min(1, ready.length - 1);
-  document.getElementById('start').addEventListener('click', async () => {
+
+  const whenSel = document.getElementById('when');
+  const startBtn = document.getElementById('start');
+  whenSel.addEventListener('change', () => {
+    const later = whenSel.value === 'later';
+    document.getElementById('toss-rows').style.display = later ? 'none' : '';
+    document.getElementById('schedule-row').style.display = later ? '' : 'none';
+    startBtn.textContent = later ? 'Schedule match' : 'Start match';
+  });
+  document.getElementById('tourn').addEventListener('change', (e) => {
+    document.getElementById('new-league-row').style.display = e.target.value === '__new__' ? '' : 'none';
+  });
+
+  startBtn.addEventListener('click', async () => {
     const teamAId = document.getElementById('team-a').value;
     const teamBId = document.getElementById('team-b').value;
     if (teamAId === teamBId) return alert('Pick two different teams');
-    const match = await api('/matches', {
-      method: 'POST',
-      body: {
-        teamAId, teamBId,
-        oversPerInnings: +document.getElementById('overs').value,
-        tournamentId: document.getElementById('tourn').value || null,
-        tossWonBy: document.getElementById('toss-won').value === 'A' ? teamAId : teamBId,
-        tossDecision: document.getElementById('toss-dec').value,
-      },
-    });
-    location.hash = `#/match/${match.id}`;
+    let tournamentId = document.getElementById('tourn').value || null;
+    if (tournamentId === '__new__') {
+      const name = document.getElementById('new-league-name').value;
+      if (!name.trim()) return alert('Give the new league a name');
+      tournamentId = (await api('/tournaments', { method: 'POST', body: { name } })).id;
+    }
+    const later = whenSel.value === 'later';
+    const body = {
+      teamAId, teamBId, tournamentId,
+      oversPerInnings: +document.getElementById('overs').value,
+    };
+    if (later) {
+      const t = document.getElementById('start-time').value;
+      body.scheduledAt = t ? new Date(t).toISOString() : null;
+    } else {
+      body.tossWonBy = document.getElementById('toss-won').value === 'A' ? teamAId : teamBId;
+      body.tossDecision = document.getElementById('toss-dec').value;
+    }
+    const match = await api('/matches', { method: 'POST', body });
+    location.hash = later ? '#/' : `#/match/${match.id}`;
+    if (later) route();
   });
 }
 
@@ -220,6 +266,36 @@ function wireTabs(id) {
 async function renderMatch(id) {
   if (matchTabFor !== id) { matchTab = 'live'; matchTabFor = id; }
   const [teams, match] = await Promise.all([getTeams(), api(`/matches/${id}`)]);
+
+  /* scheduled, not started yet: record the toss to begin */
+  if (match.status === 'upcoming') {
+    const a = teamById(teams, match.teamAId);
+    const b = teamById(teams, match.teamBId);
+    app.innerHTML = `
+      <div class="card">
+        <div class="row spread">
+          <h2 style="margin:0">${esc(a.name)} vs ${esc(b.name)}</h2>
+          <button class="ghost" onclick="location.hash='#/'">‹ Back</button>
+        </div>
+        <p class="muted" style="margin-top:0.4rem">${match.oversPerInnings} overs${match.scheduledAt ? ` · scheduled for ${fmtWhen(match.scheduledAt)}` : ''}</p>
+      </div>
+      <div class="card"><h2>Record the toss to start</h2>
+        <label>Toss won by</label>
+        <select id="toss-won"><option value="${a.id}">${esc(a.name)}</option><option value="${b.id}">${esc(b.name)}</option></select>
+        <label>Decision</label>
+        <select id="toss-dec"><option value="bat">Bat first</option><option value="bowl">Bowl first</option></select>
+        <button class="primary" style="width:100%;margin-top:1rem" id="start-match">Start match</button>
+      </div>`;
+    document.getElementById('start-match').addEventListener('click', async () => {
+      await api(`/matches/${id}/start`, {
+        method: 'POST',
+        body: { tossWonBy: document.getElementById('toss-won').value, tossDecision: document.getElementById('toss-dec').value },
+      });
+      renderMatch(id);
+    });
+    return;
+  }
+
   const inn = match.derived.innings[match.derived.innings.length - 1];
   const rawInn = match.innings[match.innings.length - 1];
   const batTeam = teamById(teams, inn.battingTeamId);
@@ -313,9 +389,8 @@ async function renderMatch(id) {
       <div class="pad">
         ${[0, 1, 2, 3].map((r) => `<button data-runs="${r}">${r}</button>`).join('')}
         <button class="info" data-runs="4">4</button>
-        <button data-runs="5">5</button>
         <button class="primary" data-runs="6">6</button>
-        <button class="danger" id="wicket">OUT</button>
+        <button class="danger" id="wicket" style="grid-column:span 2">OUT</button>
         <button class="warn" data-extra="wide">Wide</button>
         <button class="warn" data-extra="noball">No ball</button>
         <button data-extra="bye">Bye</button>
@@ -351,7 +426,8 @@ async function renderMatch(id) {
     b.addEventListener('click', () => needBowler((bowler) => {
       const extra = b.dataset.extra;
       const label = { wide: 'Runs run on the wide (besides the 1 penalty)', noball: 'Runs off the bat (besides the 1 penalty)', bye: 'Byes run', legbye: 'Leg byes run' }[extra];
-      const m = modal(label, `<div class="choice-grid">${[0, 1, 2, 3, 4].map((r) => `<button data-r="${r}">${r}</button>`).join('')}</div>`);
+      const choices = extra === 'bye' || extra === 'legbye' ? [1, 2, 3, 4] : [0, 1, 2, 3, 4];
+      const m = modal(label, `<div class="choice-grid">${choices.map((r) => `<button data-r="${r}">${r}</button>`).join('')}</div>`);
       m.querySelectorAll('[data-r]').forEach((rb) => rb.addEventListener('click', () => {
         m.remove();
         post({ type: 'ball', bowler, runs: +rb.dataset.r, extra, wicket: null });
